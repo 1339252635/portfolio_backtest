@@ -158,13 +158,52 @@ function Start-FrontendService {
         }
         
         Write-Host "[Frontend] Using npm: $npmCmd" -ForegroundColor $ColorInfo
-        $frontendProcess = Start-Process -FilePath $npmCmd -ArgumentList "run", "dev" -WorkingDirectory $FrontendPath -PassThru -WindowStyle Minimized
         
-        if ($frontendProcess) {
-            $frontendProcess.Id | Out-File $FrontendPidFile
-            Write-Host "[Frontend] OK Started (PID: $($frontendProcess.Id))" -ForegroundColor $ColorSuccess
-            Write-Host "[Frontend] URL: http://localhost:3000" -ForegroundColor $ColorInfo
-            return $true
+        # Start npm run dev - it will spawn node processes
+        $process = Start-Process -FilePath $npmCmd -ArgumentList "run", "dev" -WorkingDirectory $FrontendPath -PassThru -WindowStyle Minimized
+        
+        if ($process) {
+            # Wait for vite to start
+            Start-Sleep -Seconds 5
+            
+            # Try to find the node process by checking port 3000
+            $maxRetries = 10
+            $retry = 0
+            $found = $false
+            
+            while ($retry -lt $maxRetries -and -not $found) {
+                Start-Sleep -Seconds 1
+                
+                # Check if port 3000 is listening
+                $portCheck = netstat -ano | findstr ":3000" | findstr "LISTENING"
+                if ($portCheck) {
+                    # Port is open, service is running
+                    $found = $true
+                    break
+                }
+                $retry++
+            }
+            
+            if ($found) {
+                # Find any node process to use as PID (for stopping later)
+                $nodeProcess = Get-Process -Name "node" -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($nodeProcess) {
+                    $nodeProcess.Id | Out-File $FrontendPidFile
+                    Write-Host "[Frontend] OK Started (PID: $($nodeProcess.Id))" -ForegroundColor $ColorSuccess
+                } else {
+                    # Fallback - use the npm process ID
+                    $process.Id | Out-File $FrontendPidFile
+                    Write-Host "[Frontend] OK Started (PID: $($process.Id))" -ForegroundColor $ColorSuccess
+                }
+                Write-Host "[Frontend] URL: http://localhost:3000" -ForegroundColor $ColorInfo
+                return $true
+            } else {
+                Write-Host "[Frontend] Warning: Port 3000 not responding" -ForegroundColor $ColorWarning
+                $process.Id | Out-File $FrontendPidFile
+                Write-Host "[Frontend] OK Started (PID: $($process.Id))" -ForegroundColor $ColorSuccess
+                Write-Host "[Frontend] URL: http://localhost:3000" -ForegroundColor $ColorInfo
+                return $true
+            }
         }
     } catch {
         Write-Host "[Frontend] Failed to start: $_" -ForegroundColor $ColorError
