@@ -45,9 +45,36 @@
 
 ## 快速开始
 
-### 方式一：一键启动（推荐）
+### 方式一：手动启动（推荐）
 
-系统提供 PowerShell 脚本，一键启动前后端服务：
+在单独的终端窗口中分别启动前后端服务：
+
+**终端 1 - 启动后端：**
+```bash
+cd backend
+py run.py
+```
+后端服务将在 http://localhost:5000 启动
+
+**终端 2 - 启动前端：**
+```bash
+cd frontend
+npm run dev
+```
+前端服务将在 http://localhost:3000 启动
+
+**或使用批处理脚本一键启动：**
+```bash
+# 启动服务（会打开两个独立的命令行窗口）
+start-manual.bat
+
+# 停止服务
+stop-manual.bat
+```
+
+### 方式二：PowerShell 脚本（高级用户）
+
+系统提供 PowerShell 脚本管理工具：
 
 ```powershell
 # 启动所有服务
@@ -56,8 +83,6 @@
 # 或
 .\manage.ps1 start
 ```
-
-启动成功后自动打开浏览器访问 http://localhost:3000
 
 **其他常用命令：**
 
