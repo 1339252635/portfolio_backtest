@@ -7,17 +7,9 @@
           <el-tag :type="isMarketOpen ? 'success' : 'info'" effect="dark">
             {{ isMarketOpen ? '交易中' : '已收盘' }}
           </el-tag>
-          <el-tag v-if="mockMode" type="warning" effect="dark">模拟数据</el-tag>
           <el-button type="primary" size="small" @click="refreshData" :loading="loading">
             <el-icon><Refresh /></el-icon>
             刷新
-          </el-button>
-          <el-button 
-            :type="mockMode ? 'warning' : 'default'" 
-            size="small" 
-            @click="handleToggleMockMode"
-          >
-            {{ mockMode ? '关闭模拟' : '模拟模式' }}
           </el-button>
         </div>
       </template>
@@ -131,7 +123,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
-import { getMarketOverview, getAllProductsRealtime, toggleMockMode as toggleMockModeApi, getMockMode } from '@/api/realtime'
+import { getMarketOverview, getAllProductsRealtime } from '@/api/realtime'
 
 const loading = ref(false)
 const autoRefresh = ref(true)
@@ -139,7 +131,6 @@ const refreshInterval = ref(10)
 const marketOverview = ref({})
 const productsRealtime = ref([])
 const isMarketOpen = ref(false)
-const mockMode = ref(false)
 let refreshTimer = null
 
 // 检查是否交易时间
@@ -168,13 +159,13 @@ const fetchMarketOverview = async () => {
     if (res.data.code === 200) {
       marketOverview.value = res.data.data
     } else if (res.data.code === 503) {
-      ElMessage.warning('无法获取市场数据，请检查网络连接或切换到模拟模式')
+      ElMessage.warning('无法获取市场数据，请检查网络连接')
       marketOverview.value = {}
     }
   } catch (error) {
     console.error('Failed to fetch market overview:', error)
     if (error.response?.status === 503) {
-      ElMessage.warning('无法获取市场数据，请检查网络连接或切换到模拟模式')
+      ElMessage.warning('无法获取市场数据，请检查网络连接')
     }
   }
 }
@@ -292,35 +283,7 @@ const getChangeClass = (change) => {
   return 'neutral'
 }
 
-// 切换模拟模式
-const handleToggleMockMode = async () => {
-  try {
-    const res = await toggleMockModeApi(!mockMode.value)
-    if (res.data.code === 200) {
-      mockMode.value = !mockMode.value
-      ElMessage.success(mockMode.value ? '已切换到模拟数据模式' : '已切换到真实数据模式')
-      refreshData()
-    }
-  } catch (error) {
-    console.error('Failed to toggle mock mode:', error)
-    ElMessage.error('切换模式失败')
-  }
-}
-
-// 获取当前模式
-const fetchMockMode = async () => {
-  try {
-    const res = await getMockMode()
-    if (res.data.code === 200) {
-      mockMode.value = res.data.mock_mode
-    }
-  } catch (error) {
-    console.error('Failed to fetch mock mode:', error)
-  }
-}
-
 onMounted(() => {
-  fetchMockMode()
   refreshData()
   startAutoRefresh()
 })

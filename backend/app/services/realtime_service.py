@@ -6,7 +6,6 @@ from typing import Dict, List, Optional
 import threading
 import time
 import json
-import random
 
 
 class RealtimeService:
@@ -19,70 +18,6 @@ class RealtimeService:
         self.subscribers = {}  # WebSocket订阅者
         self.running = False
         self.update_thread = None
-        self.use_mock_data = False  # 是否使用模拟数据
-        self.mock_data_initialized = False
-    
-    def _generate_mock_quote(self, code: str, name: str = None) -> Dict:
-        """生成模拟行情数据"""
-        # 基于代码生成一个固定的随机价格
-        base_price = hash(code) % 100 + 10  # 10-110之间的基础价格
-        
-        # 生成小幅随机波动
-        change_pct = (random.random() - 0.5) * 0.1  # -5% 到 +5%
-        price = base_price * (1 + change_pct)
-        
-        return {
-            'code': code,
-            'name': name or f'产品{code}',
-            'price': round(price, 3),
-            'change': round(change_pct * 100, 2),
-            'change_amount': round(price - base_price, 3),
-            'open': round(base_price * 0.99, 3),
-            'high': round(price * 1.02, 3),
-            'low': round(price * 0.98, 3),
-            'volume': random.randint(100000, 10000000),
-            'amount': random.randint(1000000, 100000000),
-            'pre_close': base_price,
-            'timestamp': datetime.now().isoformat(),
-            'type': 'MOCK'
-        }
-    
-    def _generate_mock_market_overview(self) -> Dict:
-        """生成模拟市场概览数据"""
-        indices = {
-            '000001': '上证指数',
-            '399001': '深证成指',
-            '000300': '沪深300',
-            '000016': '上证50',
-            '399006': '创业板指',
-            '000688': '科创50'
-        }
-        
-        result = {}
-        base_prices = {
-            '000001': 3050,
-            '399001': 9850,
-            '000300': 3650,
-            '000016': 2450,
-            '399006': 1950,
-            '000688': 850
-        }
-        
-        for code, name in indices.items():
-            base = base_prices.get(code, 3000)
-            change_pct = (random.random() - 0.5) * 0.04  # -2% 到 +2%
-            price = base * (1 + change_pct)
-            
-            result[code] = {
-                'name': name,
-                'price': round(price, 2),
-                'change': round(change_pct * 100, 2),
-                'change_amount': round(price - base, 2),
-                'volume': random.randint(100000000, 500000000),
-                'amount': random.randint(1000000000, 5000000000)
-            }
-        
-        return result
     
     def start(self):
         """启动实时数据更新服务"""
@@ -139,13 +74,6 @@ class RealtimeService:
             cache_age = (datetime.now() - self.cache_time.get(code, datetime.min)).total_seconds()
             if cache_age < self.cache_duration:
                 return self.cache[code]
-        
-        # 如果启用了模拟数据模式，直接返回模拟数据
-        if self.use_mock_data:
-            data = self._generate_mock_quote(code)
-            self.cache[code] = data
-            self.cache_time[code] = datetime.now()
-            return data
         
         try:
             # 判断代码类型
@@ -286,10 +214,6 @@ class RealtimeService:
     
     def get_market_overview(self) -> Dict:
         """获取市场概览"""
-        # 如果启用了模拟数据模式，直接返回模拟数据
-        if self.use_mock_data:
-            return self._generate_mock_market_overview()
-        
         try:
             # 获取主要指数 - 使用stock_zh_index_spot_em获取指数行情
             indices = {

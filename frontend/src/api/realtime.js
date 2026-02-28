@@ -51,18 +51,3 @@ export function getMarketOverview() {
 export function subscribeRealtime(codes) {
   return api.post('/realtime/subscribe', { codes })
 }
-
-/**
- * Toggle mock data mode
- * @param {boolean} enabled - Enable or disable mock mode
- */
-export function toggleMockMode(enabled) {
-  return api.post('/realtime/mock-mode', { enabled })
-}
-
-/**
- * Get mock mode status
- */
-export function getMockMode() {
-  return api.get('/realtime/mock-mode')
-}
