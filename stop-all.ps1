@@ -1,9 +1,5 @@
-# 投资组合回测系统 - 一键停止脚本
-# 停止所有正在运行的后端和前端服务
-
-# 设置UTF-8编码
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+# Portfolio Backtest System - Stop Script
+# Stop all running backend and frontend services
 
 param(
     [switch]$BackendOnly,
@@ -12,48 +8,44 @@ param(
     [switch]$Help
 )
 
-# 显示帮助信息
+# Show help
 if ($Help) {
-    Write-Host @"
-投资组合回测系统 - 停止脚本
-
-用法: .\stop-all.ps1 [选项]
-
-选项:
-    -BackendOnly    仅停止后端服务
-    -FrontendOnly   仅停止前端服务
-    -Force          强制停止（包括非脚本启动的进程）
-    -Help           显示帮助信息
-
-示例:
-    .\stop-all.ps1              # 停止所有服务
-    .\stop-all.ps1 -BackendOnly # 仅停止后端服务
-    .\stop-all.ps1 -Force       # 强制停止所有相关进程
-"@ -ForegroundColor Cyan
+    Write-Host "Portfolio Backtest System - Stop Script" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Usage: .\stop-all.ps1 [options]" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Options:" -ForegroundColor White
+    Write-Host "    -BackendOnly    Stop only backend service" -ForegroundColor White
+    Write-Host "    -FrontendOnly   Stop only frontend service" -ForegroundColor White
+    Write-Host "    -Force          Force stop (including non-script processes)" -ForegroundColor White
+    Write-Host "    -Help           Show help" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Examples:" -ForegroundColor White
+    Write-Host "    .\stop-all.ps1              # Stop all services" -ForegroundColor White
+    Write-Host "    .\stop-all.ps1 -BackendOnly # Stop backend only" -ForegroundColor White
+    Write-Host "    .\stop-all.ps1 -Force       # Force stop all related processes" -ForegroundColor White
     exit 0
 }
 
-# 设置窗口标题
-$host.ui.RawUI.WindowTitle = "投资组合回测系统 - 服务停止器"
+# Set window title
+$host.ui.RawUI.WindowTitle = "Portfolio Backtest - Service Stopper"
 
-# 颜色定义
+# Color definitions
 $ColorInfo = "Cyan"
 $ColorSuccess = "Green"
 $ColorWarning = "Yellow"
 $ColorError = "Red"
 
-# 项目路径
+# Project paths
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BackendPidFile = Join-Path $ProjectRoot ".backend.pid"
 $FrontendPidFile = Join-Path $ProjectRoot ".frontend.pid"
 
-Write-Host @"
-╔══════════════════════════════════════════════════════════════╗
-║          投资组合回测系统 - 服务停止管理器                   ║
-╚══════════════════════════════════════════════════════════════╝
-"@ -ForegroundColor $ColorInfo
+Write-Host "========================================" -ForegroundColor $ColorInfo
+Write-Host "  Portfolio Backtest - Service Stopper  " -ForegroundColor $ColorInfo
+Write-Host "========================================" -ForegroundColor $ColorInfo
 
-# 停止服务的函数
+# Function to stop service by PID file
 function Stop-ServiceByPidFile {
     param($PidFile, $ServiceName)
     
@@ -65,116 +57,121 @@ function Stop-ServiceByPidFile {
             try {
                 $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
                 if ($process) {
-                    Write-Host "[$ServiceName] 正在停止进程 (PID: $pid)..." -ForegroundColor $ColorWarning
+                    Write-Host "[$ServiceName] Stopping process (PID: $pid)..." -ForegroundColor $ColorWarning
                     Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
                     Start-Sleep -Seconds 1
                     
-                    # 确认进程已停止
+                    # Verify process stopped
                     $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
                     if (-not $process) {
-                        Write-Host "[$ServiceName] ✓ 已停止" -ForegroundColor $ColorSuccess
+                        Write-Host "[$ServiceName] OK Stopped" -ForegroundColor $ColorSuccess
                         $stopped = $true
                     } else {
-                        Write-Host "[$ServiceName] ✗ 停止失败" -ForegroundColor $ColorError
+                        Write-Host "[$ServiceName] Failed to stop" -ForegroundColor $ColorError
                     }
                 } else {
-                    Write-Host "[$ServiceName] 进程已不存在" -ForegroundColor $ColorWarning
+                    Write-Host "[$ServiceName] Process not running" -ForegroundColor $ColorWarning
                     $stopped = $true
                 }
             } catch {
-                Write-Host "[$ServiceName] 停止时出错: $_" -ForegroundColor $ColorError
+                Write-Host "[$ServiceName] Error stopping: $_" -ForegroundColor $ColorError
             }
         }
         Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
     } else {
-        Write-Host "[$ServiceName] 未找到运行记录" -ForegroundColor $ColorWarning
+        Write-Host "[$ServiceName] No running record found" -ForegroundColor $ColorWarning
     }
     
     return $stopped
 }
 
-# 强制停止所有相关进程
+# Force stop all related processes
 function Stop-AllRelatedProcesses {
-    Write-Host "`n[强制模式] 正在搜索并停止所有相关进程..." -ForegroundColor $ColorWarning
+    Write-Host ""
+    Write-Host "[Force Mode] Searching and stopping all related processes..." -ForegroundColor $ColorWarning
     
     $stoppedCount = 0
     
-    # 停止 Python/Flask 进程
+    # Stop Python/Flask processes
     $pythonProcesses = Get-Process -Name "python*" -ErrorAction SilentlyContinue | Where-Object {
         $_.CommandLine -like "*run.py*" -or $_.CommandLine -like "*flask*"
     }
     
     foreach ($proc in $pythonProcesses) {
         try {
-            Write-Host "  停止 Python 进程 (PID: $($proc.Id))..." -ForegroundColor $ColorInfo
+            Write-Host "  Stopping Python process (PID: $($proc.Id))..." -ForegroundColor $ColorInfo
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             $stoppedCount++
         } catch {}
     }
     
-    # 停止 Node.js 进程
+    # Stop Node.js processes
     $nodeProcesses = Get-Process -Name "node*" -ErrorAction SilentlyContinue | Where-Object {
         $_.CommandLine -like "*vite*" -or $_.CommandLine -like "*npm*"
     }
     
     foreach ($proc in $nodeProcesses) {
         try {
-            Write-Host "  停止 Node.js 进程 (PID: $($proc.Id))..." -ForegroundColor $ColorInfo
+            Write-Host "  Stopping Node.js process (PID: $($proc.Id))..." -ForegroundColor $ColorInfo
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             $stoppedCount++
         } catch {}
     }
     
     if ($stoppedCount -gt 0) {
-        Write-Host "`n✓ 已强制停止 $stoppedCount 个进程" -ForegroundColor $ColorSuccess
+        Write-Host ""
+        Write-Host "OK Stopped $stoppedCount processes" -ForegroundColor $ColorSuccess
     } else {
-        Write-Host "`n未找到相关进程" -ForegroundColor $ColorWarning
+        Write-Host ""
+        Write-Host "No related processes found" -ForegroundColor $ColorWarning
     }
 }
 
-# 主逻辑
+# Main logic
 $backendStopped = $false
 $frontendStopped = $false
 
 if ($Force) {
-    # 强制模式：停止所有相关进程
+    # Force mode: stop all related processes
     Stop-AllRelatedProcesses
     
-    # 清理PID文件
+    # Clean up PID files
     if (Test-Path $BackendPidFile) { Remove-Item $BackendPidFile -Force -ErrorAction SilentlyContinue }
     if (Test-Path $FrontendPidFile) { Remove-Item $FrontendPidFile -Force -ErrorAction SilentlyContinue }
 } else {
-    # 正常模式：根据参数停止服务
+    # Normal mode: stop services by parameter
     if ($BackendOnly) {
-        $backendStopped = Stop-ServiceByPidFile -PidFile $BackendPidFile -ServiceName "后端服务"
+        $backendStopped = Stop-ServiceByPidFile -PidFile $BackendPidFile -ServiceName "Backend"
     } elseif ($FrontendOnly) {
-        $frontendStopped = Stop-ServiceByPidFile -PidFile $FrontendPidFile -ServiceName "前端服务"
+        $frontendStopped = Stop-ServiceByPidFile -PidFile $FrontendPidFile -ServiceName "Frontend"
     } else {
-        $backendStopped = Stop-ServiceByPidFile -PidFile $BackendPidFile -ServiceName "后端服务"
-        $frontendStopped = Stop-ServiceByPidFile -PidFile $FrontendPidFile -ServiceName "前端服务"
+        $backendStopped = Stop-ServiceByPidFile -PidFile $BackendPidFile -ServiceName "Backend"
+        $frontendStopped = Stop-ServiceByPidFile -PidFile $FrontendPidFile -ServiceName "Frontend"
     }
     
-    # 显示总结
-    Write-Host "`n══════════════════════════════════════════════════════════════" -ForegroundColor $ColorInfo
-    Write-Host "停止总结:" -ForegroundColor $ColorInfo
+    # Show summary
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor $ColorInfo
+    Write-Host "Stop Summary:" -ForegroundColor $ColorInfo
     
     if ($BackendOnly -or (-not $FrontendOnly)) {
         if ($backendStopped) {
-            Write-Host "  • 后端服务: 已停止" -ForegroundColor $ColorSuccess
+            Write-Host "  - Backend: Stopped" -ForegroundColor $ColorSuccess
         } else {
-            Write-Host "  • 后端服务: 未运行或停止失败" -ForegroundColor $ColorWarning
+            Write-Host "  - Backend: Not running or failed to stop" -ForegroundColor $ColorWarning
         }
     }
     
     if ($FrontendOnly -or (-not $BackendOnly)) {
         if ($frontendStopped) {
-            Write-Host "  • 前端服务: 已停止" -ForegroundColor $ColorSuccess
+            Write-Host "  - Frontend: Stopped" -ForegroundColor $ColorSuccess
         } else {
-            Write-Host "  • 前端服务: 未运行或停止失败" -ForegroundColor $ColorWarning
+            Write-Host "  - Frontend: Not running or failed to stop" -ForegroundColor $ColorWarning
         }
     }
     
-    Write-Host "══════════════════════════════════════════════════════════════" -ForegroundColor $ColorInfo
+    Write-Host "========================================" -ForegroundColor $ColorInfo
 }
 
-Write-Host "`n提示: 使用 .\start-all.ps1 重新启动服务" -ForegroundColor $ColorInfo
+Write-Host ""
+Write-Host "Tip: Use .\start-all.ps1 to restart services" -ForegroundColor $ColorInfo

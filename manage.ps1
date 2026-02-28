@@ -1,9 +1,5 @@
-# 投资组合回测系统 - 统一管理脚本
-# 整合启动、停止、状态查看等功能
-
-# 设置UTF-8编码
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+# Portfolio Backtest System - Management Script
+# Unified tool for start, stop, restart, status check
 
 param(
     [Parameter(Position = 0)]
@@ -16,70 +12,64 @@ param(
     [switch]$NoBrowser
 )
 
-# 颜色定义
+# Color definitions
 $ColorInfo = "Cyan"
 $ColorSuccess = "Green"
 $ColorWarning = "Yellow"
 $ColorError = "Red"
 
-# 项目路径
+# Project paths
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BackendPidFile = Join-Path $ProjectRoot ".backend.pid"
 $FrontendPidFile = Join-Path $ProjectRoot ".frontend.pid"
 
-# 显示Logo
+# Show logo
 function Show-Logo {
-    Write-Host @"
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║     📊 投资组合回测系统 - 服务管理工具                       ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-"@ -ForegroundColor $ColorInfo
+    Write-Host "========================================" -ForegroundColor $ColorInfo
+    Write-Host "  Portfolio Backtest - Manager Tool     " -ForegroundColor $ColorInfo
+    Write-Host "========================================" -ForegroundColor $ColorInfo
 }
 
-# 显示帮助信息
+# Show help
 function Show-Help {
     Show-Logo
-    Write-Host @"
-用法: .\manage.ps1 <命令> [选项]
-
-命令:
-    start     启动服务
-    stop      停止服务
-    restart   重启服务
-    status    查看服务状态
-    logs      查看服务日志
-    help      显示帮助信息
-
-选项:
-    -BackendOnly   仅操作后端服务
-    -FrontendOnly  仅操作前端服务
-    -Force         强制停止（用于stop命令）
-    -NoBrowser     启动时不自动打开浏览器
-
-示例:
-    .\manage.ps1 start                    # 启动所有服务
-    .\manage.ps1 start -BackendOnly       # 仅启动后端服务
-    .\manage.ps1 stop                     # 停止所有服务
-    .\manage.ps1 stop -Force              # 强制停止所有服务
-    .\manage.ps1 restart                  # 重启所有服务
-    .\manage.ps1 status                   # 查看服务状态
-
-快捷方式:
-    .\start-all.ps1    # 等同于 .\manage.ps1 start
-    .\stop-all.ps1     # 等同于 .\manage.ps1 stop
-"@ -ForegroundColor White
+    Write-Host ""
+    Write-Host "Usage: .\manage.ps1 <command> [options]" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Commands:" -ForegroundColor White
+    Write-Host "    start     Start services" -ForegroundColor White
+    Write-Host "    stop      Stop services" -ForegroundColor White
+    Write-Host "    restart   Restart services" -ForegroundColor White
+    Write-Host "    status    Check service status" -ForegroundColor White
+    Write-Host "    logs      View service logs" -ForegroundColor White
+    Write-Host "    help      Show help" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Options:" -ForegroundColor White
+    Write-Host "    -BackendOnly   Only operate backend service" -ForegroundColor White
+    Write-Host "    -FrontendOnly  Only operate frontend service" -ForegroundColor White
+    Write-Host "    -Force         Force stop (for stop command)" -ForegroundColor White
+    Write-Host "    -NoBrowser     Do not open browser on start" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Examples:" -ForegroundColor White
+    Write-Host "    .\manage.ps1 start          # Start all services" -ForegroundColor White
+    Write-Host "    .\manage.ps1 start -BackendOnly    # Start backend only" -ForegroundColor White
+    Write-Host "    .\manage.ps1 stop           # Stop all services" -ForegroundColor White
+    Write-Host "    .\manage.ps1 stop -Force    # Force stop all" -ForegroundColor White
+    Write-Host "    .\manage.ps1 restart        # Restart all services" -ForegroundColor White
+    Write-Host "    .\manage.ps1 status         # Check status" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Shortcuts:" -ForegroundColor White
+    Write-Host "    .\start-all.ps1    # Same as: .\manage.ps1 start" -ForegroundColor White
+    Write-Host "    .\stop-all.ps1     # Same as: .\manage.ps1 stop" -ForegroundColor White
 }
 
-# 获取服务状态
+# Get service status
 function Get-ServiceStatus {
     $backendRunning = $false
     $frontendRunning = $false
     $backendPid = $null
     $frontendPid = $null
 
-    # 检查后端服务
     if (Test-Path $BackendPidFile) {
         $backendPid = Get-Content $BackendPidFile -ErrorAction SilentlyContinue
         if ($backendPid) {
@@ -88,7 +78,6 @@ function Get-ServiceStatus {
         }
     }
 
-    # 检查前端服务
     if (Test-Path $FrontendPidFile) {
         $frontendPid = Get-Content $FrontendPidFile -ErrorAction SilentlyContinue
         if ($frontendPid) {
@@ -105,46 +94,45 @@ function Get-ServiceStatus {
     }
 }
 
-# 显示服务状态
+# Show service status
 function Show-Status {
     Show-Logo
-    Write-Host "服务状态:`n" -ForegroundColor $ColorInfo
+    Write-Host ""
+    Write-Host "Service Status:" -ForegroundColor $ColorInfo
+    Write-Host ""
 
     $status = Get-ServiceStatus
 
-    # 后端状态
     if ($status.BackendRunning) {
-        Write-Host "  🟢 后端服务: 运行中" -ForegroundColor $ColorSuccess
-        Write-Host "     PID: $($status.BackendPid)" -ForegroundColor White
-        Write-Host "     地址: http://localhost:5000" -ForegroundColor White
+        Write-Host "  [OK] Backend: Running" -ForegroundColor $ColorSuccess
+        Write-Host "       PID: $($status.BackendPid)" -ForegroundColor White
+        Write-Host "       URL: http://localhost:5000" -ForegroundColor White
     } else {
-        Write-Host "  🔴 后端服务: 已停止" -ForegroundColor $ColorError
+        Write-Host "  [STOPPED] Backend: Not running" -ForegroundColor $ColorError
     }
 
     Write-Host ""
 
-    # 前端状态
     if ($status.FrontendRunning) {
-        Write-Host "  🟢 前端服务: 运行中" -ForegroundColor $ColorSuccess
-        Write-Host "     PID: $($status.FrontendPid)" -ForegroundColor White
-        Write-Host "     地址: http://localhost:3000" -ForegroundColor White
+        Write-Host "  [OK] Frontend: Running" -ForegroundColor $ColorSuccess
+        Write-Host "       PID: $($status.FrontendPid)" -ForegroundColor White
+        Write-Host "       URL: http://localhost:3000" -ForegroundColor White
     } else {
-        Write-Host "  🔴 前端服务: 已停止" -ForegroundColor $ColorError
+        Write-Host "  [STOPPED] Frontend: Not running" -ForegroundColor $ColorError
     }
 
     Write-Host ""
 
-    # 总体状态
     if ($status.BackendRunning -and $status.FrontendRunning) {
-        Write-Host "✓ 所有服务运行正常" -ForegroundColor $ColorSuccess
+        Write-Host "All services are running normally" -ForegroundColor $ColorSuccess
     } elseif ($status.BackendRunning -or $status.FrontendRunning) {
-        Write-Host "⚠ 部分服务未运行" -ForegroundColor $ColorWarning
+        Write-Host "Some services are not running" -ForegroundColor $ColorWarning
     } else {
-        Write-Host "✗ 所有服务已停止" -ForegroundColor $ColorError
+        Write-Host "All services are stopped" -ForegroundColor $ColorError
     }
 }
 
-# 启动服务
+# Start services
 function Start-Services {
     param($SkipBrowser = $false)
 
@@ -159,11 +147,11 @@ function Start-Services {
     if (Test-Path $scriptPath) {
         & $scriptPath @params
     } else {
-        Write-Host "错误: 找不到启动脚本 start-all.ps1" -ForegroundColor $ColorError
+        Write-Host "Error: start-all.ps1 not found" -ForegroundColor $ColorError
     }
 }
 
-# 停止服务
+# Stop services
 function Stop-Services {
     Show-Logo
 
@@ -176,16 +164,17 @@ function Stop-Services {
     if (Test-Path $scriptPath) {
         & $scriptPath @params
     } else {
-        Write-Host "错误: 找不到停止脚本 stop-all.ps1" -ForegroundColor $ColorError
+        Write-Host "Error: stop-all.ps1 not found" -ForegroundColor $ColorError
     }
 }
 
-# 重启服务
+# Restart services
 function Restart-Services {
     Show-Logo
-    Write-Host "正在重启服务...`n" -ForegroundColor $ColorInfo
+    Write-Host ""
+    Write-Host "Restarting services..." -ForegroundColor $ColorInfo
+    Write-Host ""
 
-    # 先停止
     $stopParams = @()
     if ($BackendOnly) { $stopParams += "-BackendOnly" }
     if ($FrontendOnly) { $stopParams += "-FrontendOnly" }
@@ -197,9 +186,8 @@ function Restart-Services {
 
     Start-Sleep -Seconds 2
 
-    Write-Host "`n" -NoNewline
+    Write-Host ""
 
-    # 再启动
     $startParams = @()
     if ($BackendOnly) { $startParams += "-BackendOnly" }
     if ($FrontendOnly) { $startParams += "-FrontendOnly" }
@@ -211,15 +199,17 @@ function Restart-Services {
     }
 }
 
-# 查看日志
+# Show logs
 function Show-Logs {
     Show-Logo
-    Write-Host "日志查看功能开发中..." -ForegroundColor $ColorWarning
-    Write-Host "`n您可以使用以下命令手动查看日志:" -ForegroundColor $ColorInfo
+    Write-Host ""
+    Write-Host "Log viewing feature is under development..." -ForegroundColor $ColorWarning
+    Write-Host ""
+    Write-Host "You can manually view logs with:" -ForegroundColor $ColorInfo
     Write-Host "  Get-Content .\backend\logs\*.log -Tail 50 -Wait" -ForegroundColor White
 }
 
-# 主逻辑
+# Main logic
 switch ($Command.ToLower()) {
     "start" { Start-Services }
     "stop" { Stop-Services }

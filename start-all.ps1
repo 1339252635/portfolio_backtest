@@ -1,9 +1,5 @@
-# 投资组合回测系统 - 一键启动脚本
-# 同时启动后端Flask服务和前端Vue开发服务器
-
-# 设置UTF-8编码
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+# Portfolio Backtest System - Start Script
+# Start both backend Flask and frontend Vue services
 
 param(
     [switch]$BackendOnly,
@@ -12,53 +8,48 @@ param(
     [switch]$Help
 )
 
-# 显示帮助信息
+# Show help
 if ($Help) {
-    Write-Host @"
-投资组合回测系统 - 启动脚本
-
-用法: .\start-all.ps1 [选项]
-
-选项:
-    -BackendOnly    仅启动后端服务
-    -FrontendOnly   仅启动前端服务
-    -NoBrowser      不自动打开浏览器
-    -Help           显示帮助信息
-
-示例:
-    .\start-all.ps1              # 启动前后端所有服务
-    .\start-all.ps1 -BackendOnly # 仅启动后端服务
-    .\start-all.ps1 -FrontendOnly # 仅启动前端服务
-    .\start-all.ps1 -NoBrowser   # 启动服务但不打开浏览器
-"@ -ForegroundColor Cyan
+    Write-Host "Portfolio Backtest System - Start Script" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Usage: .\start-all.ps1 [options]" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Options:" -ForegroundColor White
+    Write-Host "    -BackendOnly    Start only backend service" -ForegroundColor White
+    Write-Host "    -FrontendOnly   Start only frontend service" -ForegroundColor White
+    Write-Host "    -NoBrowser      Do not open browser" -ForegroundColor White
+    Write-Host "    -Help           Show help" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Examples:" -ForegroundColor White
+    Write-Host "    .\start-all.ps1              # Start all services" -ForegroundColor White
+    Write-Host "    .\start-all.ps1 -BackendOnly # Start backend only" -ForegroundColor White
+    Write-Host "    .\start-all.ps1 -NoBrowser   # Start without opening browser" -ForegroundColor White
     exit 0
 }
 
-# 设置窗口标题
-$host.ui.RawUI.WindowTitle = "投资组合回测系统 - 服务管理器"
+# Set window title
+$host.ui.RawUI.WindowTitle = "Portfolio Backtest - Service Manager"
 
-# 颜色定义
+# Color definitions
 $ColorInfo = "Cyan"
 $ColorSuccess = "Green"
 $ColorWarning = "Yellow"
 $ColorError = "Red"
 
-# 项目路径
+# Project paths
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BackendPath = Join-Path $ProjectRoot "backend"
 $FrontendPath = Join-Path $ProjectRoot "frontend"
 
-# PID文件路径
+# PID file paths
 $BackendPidFile = Join-Path $ProjectRoot ".backend.pid"
 $FrontendPidFile = Join-Path $ProjectRoot ".frontend.pid"
 
-Write-Host @"
-╔══════════════════════════════════════════════════════════════╗
-║          投资组合回测系统 - 服务启动管理器                   ║
-╚══════════════════════════════════════════════════════════════╝
-"@ -ForegroundColor $ColorInfo
+Write-Host "========================================" -ForegroundColor $ColorInfo
+Write-Host "  Portfolio Backtest - Service Starter  " -ForegroundColor $ColorInfo
+Write-Host "========================================" -ForegroundColor $ColorInfo
 
-# 检查并清理已存在的进程
+# Function to stop existing process
 function Stop-ExistingProcess {
     param($PidFile, $ServiceName)
     
@@ -68,7 +59,7 @@ function Stop-ExistingProcess {
             try {
                 $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
                 if ($process) {
-                    Write-Host "[$ServiceName] 检测到已运行的进程 (PID: $pid)，正在停止..." -ForegroundColor $ColorWarning
+                    Write-Host "[$ServiceName] Stopping existing process (PID: $pid)..." -ForegroundColor $ColorWarning
                     Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
                     Start-Sleep -Seconds 2
                 }
@@ -78,83 +69,77 @@ function Stop-ExistingProcess {
     }
 }
 
-# 启动后端服务
+# Start backend service
 function Start-BackendService {
-    Write-Host "`n[后端服务] 正在启动 Flask 服务..." -ForegroundColor $ColorInfo
+    Write-Host ""
+    Write-Host "[Backend] Starting Flask service..." -ForegroundColor $ColorInfo
     
-    # 检查后端目录
     if (-not (Test-Path $BackendPath)) {
-        Write-Host "[后端服务] 错误: 找不到后端目录 $BackendPath" -ForegroundColor $ColorError
+        Write-Host "[Backend] Error: Backend directory not found" -ForegroundColor $ColorError
         return $false
     }
     
-    # 检查 run.py 是否存在
     $runPyPath = Join-Path $BackendPath "run.py"
     if (-not (Test-Path $runPyPath)) {
-        Write-Host "[后端服务] 错误: 找不到 run.py" -ForegroundColor $ColorError
+        Write-Host "[Backend] Error: run.py not found" -ForegroundColor $ColorError
         return $false
     }
     
-    # 清理已存在的进程
-    Stop-ExistingProcess -PidFile $BackendPidFile -ServiceName "后端服务"
+    Stop-ExistingProcess -PidFile $BackendPidFile -ServiceName "Backend"
     
     try {
-        # 启动后端进程
         $backendProcess = Start-Process -FilePath "py" -ArgumentList "run.py" -WorkingDirectory $BackendPath -PassThru -WindowStyle Minimized
         
         if ($backendProcess) {
             $backendProcess.Id | Out-File $BackendPidFile
-            Write-Host "[后端服务] ✓ 启动成功 (PID: $($backendProcess.Id))" -ForegroundColor $ColorSuccess
-            Write-Host "[后端服务]   地址: http://localhost:5000" -ForegroundColor $ColorInfo
+            Write-Host "[Backend] OK Started (PID: $($backendProcess.Id))" -ForegroundColor $ColorSuccess
+            Write-Host "[Backend] URL: http://localhost:5000" -ForegroundColor $ColorInfo
             return $true
         }
     } catch {
-        Write-Host "[后端服务] ✗ 启动失败: $_" -ForegroundColor $ColorError
+        Write-Host "[Backend] Failed to start: $_" -ForegroundColor $ColorError
         return $false
     }
     
     return $false
 }
 
-# 启动前端服务
+# Start frontend service
 function Start-FrontendService {
-    Write-Host "`n[前端服务] 正在启动 Vue 开发服务器..." -ForegroundColor $ColorInfo
+    Write-Host ""
+    Write-Host "[Frontend] Starting Vue dev server..." -ForegroundColor $ColorInfo
     
-    # 检查前端目录
     if (-not (Test-Path $FrontendPath)) {
-        Write-Host "[前端服务] 错误: 找不到前端目录 $FrontendPath" -ForegroundColor $ColorError
+        Write-Host "[Frontend] Error: Frontend directory not found" -ForegroundColor $ColorError
         return $false
     }
     
-    # 检查 package.json 是否存在
     $packageJsonPath = Join-Path $FrontendPath "package.json"
     if (-not (Test-Path $packageJsonPath)) {
-        Write-Host "[前端服务] 错误: 找不到 package.json" -ForegroundColor $ColorError
+        Write-Host "[Frontend] Error: package.json not found" -ForegroundColor $ColorError
         return $false
     }
     
-    # 清理已存在的进程
-    Stop-ExistingProcess -PidFile $FrontendPidFile -ServiceName "前端服务"
+    Stop-ExistingProcess -PidFile $FrontendPidFile -ServiceName "Frontend"
     
     try {
-        # 启动前端进程
         $frontendProcess = Start-Process -FilePath "npm" -ArgumentList "run", "dev" -WorkingDirectory $FrontendPath -PassThru -WindowStyle Minimized
         
         if ($frontendProcess) {
             $frontendProcess.Id | Out-File $FrontendPidFile
-            Write-Host "[前端服务] ✓ 启动成功 (PID: $($frontendProcess.Id))" -ForegroundColor $ColorSuccess
-            Write-Host "[前端服务]   地址: http://localhost:3000" -ForegroundColor $ColorInfo
+            Write-Host "[Frontend] OK Started (PID: $($frontendProcess.Id))" -ForegroundColor $ColorSuccess
+            Write-Host "[Frontend] URL: http://localhost:3000" -ForegroundColor $ColorInfo
             return $true
         }
     } catch {
-        Write-Host "[前端服务] ✗ 启动失败: $_" -ForegroundColor $ColorError
+        Write-Host "[Frontend] Failed to start: $_" -ForegroundColor $ColorError
         return $false
     }
     
     return $false
 }
 
-# 主逻辑
+# Main logic
 $backendStarted = $false
 $frontendStarted = $false
 
@@ -165,53 +150,57 @@ if ($BackendOnly) {
 } else {
     $backendStarted = Start-BackendService
     
-    # 等待后端启动
     if ($backendStarted) {
-        Write-Host "`n等待后端服务初始化..." -ForegroundColor $ColorInfo
+        Write-Host ""
+        Write-Host "Waiting for backend initialization..." -ForegroundColor $ColorInfo
         Start-Sleep -Seconds 3
     }
     
     $frontendStarted = Start-FrontendService
 }
 
-# 显示总结
-Write-Host "`n══════════════════════════════════════════════════════════════" -ForegroundColor $ColorInfo
-Write-Host "启动总结:" -ForegroundColor $ColorInfo
+# Show summary
+Write-Host ""
+Write-Host "========================================" -ForegroundColor $ColorInfo
+Write-Host "Startup Summary:" -ForegroundColor $ColorInfo
 
 if ($BackendOnly -or (-not $FrontendOnly)) {
     if ($backendStarted) {
-        Write-Host "  • 后端服务: 运行中 (http://localhost:5000)" -ForegroundColor $ColorSuccess
+        Write-Host "  - Backend: Running (http://localhost:5000)" -ForegroundColor $ColorSuccess
     } else {
-        Write-Host "  • 后端服务: 启动失败" -ForegroundColor $ColorError
+        Write-Host "  - Backend: Failed to start" -ForegroundColor $ColorError
     }
 }
 
 if ($FrontendOnly -or (-not $BackendOnly)) {
     if ($frontendStarted) {
-        Write-Host "  • 前端服务: 运行中 (http://localhost:3000)" -ForegroundColor $ColorSuccess
+        Write-Host "  - Frontend: Running (http://localhost:3000)" -ForegroundColor $ColorSuccess
     } else {
-        Write-Host "  • 前端服务: 启动失败" -ForegroundColor $ColorError
+        Write-Host "  - Frontend: Failed to start" -ForegroundColor $ColorError
     }
 }
 
-Write-Host "══════════════════════════════════════════════════════════════" -ForegroundColor $ColorInfo
+Write-Host "========================================" -ForegroundColor $ColorInfo
 
-# 提示如何停止服务
-Write-Host "`n提示: 使用 .\stop-all.ps1 停止所有服务" -ForegroundColor $ColorWarning
+Write-Host ""
+Write-Host "Tip: Use .\stop-all.ps1 to stop all services" -ForegroundColor $ColorWarning
 
-# 如果全部启动成功，自动打开浏览器（除非指定了 -NoBrowser）
+# Open browser if not disabled
 if (-not $NoBrowser) {
     if (($BackendOnly -and $backendStarted) -or 
         ($FrontendOnly -and $frontendStarted) -or 
         ((-not $BackendOnly -and -not $FrontendOnly) -and $backendStarted -and $frontendStarted)) {
         
-        Write-Host "`n正在打开浏览器..." -ForegroundColor $ColorInfo
+        Write-Host ""
+        Write-Host "Opening browser..." -ForegroundColor $ColorInfo
         Start-Sleep -Seconds 2
         
         if ($BackendOnly) {
-            Start-Process "http://localhost:5000"
+            $url = "http://localhost:5000"
+            Start-Process $url
         } else {
-            Start-Process "http://localhost:3000"
+            $url = "http://localhost:3000"
+            Start-Process $url
         }
     }
 }
