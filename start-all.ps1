@@ -140,9 +140,14 @@ function Start-FrontendService {
         }
         
         if (-not $npmCmd) {
-            $npmCmd = (Get-Command "npm" -ErrorAction SilentlyContinue)?.Source
-            if (-not $npmCmd) {
-                $npmCmd = (Get-Command "npm.cmd" -ErrorAction SilentlyContinue)?.Source
+            $cmd = Get-Command "npm" -ErrorAction SilentlyContinue
+            if ($cmd) {
+                $npmCmd = $cmd.Source
+            } else {
+                $cmd = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
+                if ($cmd) {
+                    $npmCmd = $cmd.Source
+                }
             }
         }
         
