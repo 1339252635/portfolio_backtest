@@ -1,0 +1,360 @@
+/* Apple macOS/iOS 风格主题 */
+
+/* 基础变量 */
+:root {
+  /* 苹果系统颜色 */
+  --apple-bg: #f5f5f7;
+  --apple-card-bg: rgba(255, 255, 255, 0.8);
+  --apple-sidebar-bg: rgba(245, 245, 247, 0.95);
+  --apple-text-primary: #1d1d1f;
+  --apple-text-secondary: #86868b;
+  --apple-blue: #0071e3;
+  --apple-blue-hover: #0077ed;
+  --apple-green: #34c759;
+  --apple-red: #ff3b30;
+  --apple-orange: #ff9500;
+  --apple-gray: #8e8e93;
+  --apple-border: rgba(0, 0, 0, 0.08);
+  --apple-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --apple-shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.12);
+  
+  /* 圆角 */
+  --apple-radius-sm: 8px;
+  --apple-radius: 12px;
+  --apple-radius-lg: 18px;
+  --apple-radius-xl: 24px;
+  
+  /* 字体 */
+  --apple-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 全局样式 */
+* {
+  font-family: var(--apple-font);
+}
+
+body {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+  color: var(--apple-text-primary);
+}
+
+/* 玻璃拟态效果 */
+.apple-glass {
+  background: var(--apple-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 卡片样式 */
+.apple-card {
+  background: var(--apple-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: var(--apple-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--apple-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-card:hover {
+  box-shadow: var(--apple-shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* 按钮样式 */
+.apple-button {
+  background: var(--apple-blue);
+  color: white;
+  border: none;
+  border-radius: var(--apple-radius-sm);
+  padding: 10px 20px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
+}
+
+.apple-button:hover {
+  background: var(--apple-blue-hover);
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(0, 113, 227, 0.4);
+}
+
+.apple-button-secondary {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--apple-text-primary);
+  border: none;
+  border-radius: var(--apple-radius-sm);
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.apple-button-secondary:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 输入框样式 */
+.apple-input {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid transparent;
+  border-radius: var(--apple-radius-sm);
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.apple-input:focus {
+  background: white;
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+  outline: none;
+}
+
+/* 侧边栏样式 */
+.apple-sidebar {
+  background: var(--apple-sidebar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--apple-border);
+}
+
+.apple-sidebar-item {
+  padding: 12px 16px;
+  margin: 4px 12px;
+  border-radius: var(--apple-radius-sm);
+  color: var(--apple-text-secondary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.apple-sidebar-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--apple-text-primary);
+}
+
+.apple-sidebar-item.active {
+  background: var(--apple-blue);
+  color: white;
+}
+
+/* 标签样式 */
+.apple-tag {
+  background: rgba(0, 113, 227, 0.1);
+  color: var(--apple-blue);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 统计卡片 */
+.apple-stat-card {
+  background: var(--apple-card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: var(--apple-radius-lg);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--apple-shadow);
+}
+
+.apple-stat-value {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.apple-stat-label {
+  font-size: 13px;
+  color: var(--apple-text-secondary);
+  margin-top: 4px;
+}
+
+/* 表格样式 */
+.apple-table {
+  background: transparent;
+  border-radius: var(--apple-radius-lg);
+  overflow: hidden;
+}
+
+.apple-table th {
+  background: rgba(0, 0, 0, 0.02);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--apple-text-secondary);
+  padding: 16px;
+  border-bottom: 1px solid var(--apple-border);
+}
+
+.apple-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--apple-border);
+  font-size: 14px;
+}
+
+.apple-table tr:hover td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* 头部样式 */
+.apple-header {
+  background: var(--apple-sidebar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--apple-border);
+}
+
+/* 分段控制器 */
+.apple-segment {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--apple-radius-sm);
+  padding: 4px;
+  display: inline-flex;
+}
+
+.apple-segment-item {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--apple-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.apple-segment-item.active {
+  background: white;
+  color: var(--apple-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 动画 */
+@keyframes apple-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.apple-animate-in {
+  animation: apple-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Element Plus 覆盖 */
+.el-card {
+  background: var(--apple-card-bg) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: var(--apple-radius-lg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: var(--apple-shadow) !important;
+}
+
+.el-card__header {
+  border-bottom: 1px solid var(--apple-border) !important;
+  padding: 20px 24px !important;
+}
+
+.el-button--primary {
+  background: var(--apple-blue) !important;
+  border-color: var(--apple-blue) !important;
+  border-radius: var(--apple-radius-sm) !important;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3) !important;
+}
+
+.el-button--primary:hover {
+  background: var(--apple-blue-hover) !important;
+  box-shadow: 0 4px 16px rgba(0, 113, 227, 0.4) !important;
+}
+
+.el-input__wrapper {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-radius: var(--apple-radius-sm) !important;
+  box-shadow: none !important;
+}
+
+.el-input__wrapper:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+.el-input__wrapper.is-focus {
+  background: white !important;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1) !important;
+}
+
+.el-menu {
+  background: transparent !important;
+  border-right: none !important;
+}
+
+.el-menu-item {
+  color: var(--apple-text-secondary) !important;
+  border-radius: var(--apple-radius-sm);
+  margin: 4px 12px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+}
+
+.el-menu-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--apple-text-primary) !important;
+}
+
+.el-menu-item.is-active {
+  background: var(--apple-blue) !important;
+  color: white !important;
+}
+
+.el-table {
+  background: transparent !important;
+  --el-table-header-bg-color: rgba(0, 0, 0, 0.02);
+  --el-table-row-hover-bg-color: rgba(0, 0, 0, 0.02);
+}
+
+.el-table th {
+  font-weight: 600 !important;
+  color: var(--apple-text-secondary) !important;
+}
+
+.el-tabs__item {
+  font-weight: 500 !important;
+}
+
+.el-tabs__item.is-active {
+  color: var(--apple-blue) !important;
+}
+
+.el-tabs__active-bar {
+  background-color: var(--apple-blue) !important;
+}
+
+.el-select .el-input__wrapper {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.el-tag {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+
+.el-tag--primary {
+  background: rgba(0, 113, 227, 0.1) !important;
+  color: var(--apple-blue) !important;
+  border: none !important;
+}
+
+.el-statistic__content {
+  font-weight: 600 !important;
+  color: var(--apple-text-primary) !important;
+}
+
+.el-statistic__title {
+  color: var(--apple-text-secondary) !important;
+  font-size: 13px !important;
+}
