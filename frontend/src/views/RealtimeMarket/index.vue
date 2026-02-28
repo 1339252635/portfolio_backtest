@@ -15,7 +15,7 @@
           <el-button 
             :type="mockMode ? 'warning' : 'default'" 
             size="small" 
-            @click="toggleMockMode"
+            @click="handleToggleMockMode"
           >
             {{ mockMode ? '关闭模拟' : '模拟模式' }}
           </el-button>
@@ -131,7 +131,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
-import { getMarketOverview, getAllProductsRealtime, toggleMockMode, getMockMode } from '@/api/realtime'
+import { getMarketOverview, getAllProductsRealtime, toggleMockMode as toggleMockModeApi, getMockMode } from '@/api/realtime'
 
 const loading = ref(false)
 const autoRefresh = ref(true)
@@ -293,9 +293,9 @@ const getChangeClass = (change) => {
 }
 
 // 切换模拟模式
-const toggleMockMode = async () => {
+const handleToggleMockMode = async () => {
   try {
-    const res = await toggleMockMode(!mockMode.value)
+    const res = await toggleMockModeApi(!mockMode.value)
     if (res.data.code === 200) {
       mockMode.value = !mockMode.value
       ElMessage.success(mockMode.value ? '已切换到模拟数据模式' : '已切换到真实数据模式')
