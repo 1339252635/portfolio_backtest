@@ -52,17 +52,17 @@ function Stop-ServiceByPidFile {
     $stopped = $false
     
     if (Test-Path $PidFile) {
-        $pid = Get-Content $PidFile -ErrorAction SilentlyContinue
-        if ($pid) {
+        $processId = Get-Content $PidFile -ErrorAction SilentlyContinue
+        if ($processId) {
             try {
-                $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
+                $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
                 if ($process) {
-                    Write-Host "[$ServiceName] Stopping process (PID: $pid)..." -ForegroundColor $ColorWarning
-                    Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                    Write-Host "[$ServiceName] Stopping process (PID: $processId)..." -ForegroundColor $ColorWarning
+                    Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
                     Start-Sleep -Seconds 1
                     
                     # Verify process stopped
-                    $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
+                    $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
                     if (-not $process) {
                         Write-Host "[$ServiceName] OK Stopped" -ForegroundColor $ColorSuccess
                         $stopped = $true
