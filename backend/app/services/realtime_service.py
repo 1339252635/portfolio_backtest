@@ -165,20 +165,12 @@ class RealtimeService:
                 self.cache_time[code] = datetime.now()
                 return data
             else:
-                # 如果获取失败，返回模拟数据
-                print(f"Using mock data for {code}")
-                data = self._generate_mock_quote(code)
-                self.cache[code] = data
-                self.cache_time[code] = datetime.now()
-                return data
+                print(f"No data found for {code}")
+                return None
             
         except Exception as e:
-            print(f"Error getting realtime quote for {code}: {e}, using mock data")
-            # 出错时返回模拟数据
-            data = self._generate_mock_quote(code)
-            self.cache[code] = data
-            self.cache_time[code] = datetime.now()
-            return data
+            print(f"Error getting realtime quote for {code}: {e}")
+            return None
     
     def _get_etf_realtime(self, code: str) -> Optional[Dict]:
         """获取ETF实时行情"""
@@ -328,19 +320,12 @@ class RealtimeService:
                     except Exception as e:
                         print(f"Error getting index {code}: {e}")
             except Exception as e:
-                print(f"Error getting market overview data: {e}, using mock data")
-                # 出错时返回模拟数据
-                return self._generate_mock_market_overview()
-            
-            # 如果没有获取到数据，返回模拟数据
-            if not result:
-                print("No market data available, using mock data")
-                return self._generate_mock_market_overview()
+                print(f"Error getting market overview data: {e}")
             
             return result
         except Exception as e:
-            print(f"Error getting market overview: {e}, using mock data")
-            return self._generate_mock_market_overview()
+            print(f"Error getting market overview: {e}")
+            return {}
 
 
 # 全局实时服务实例

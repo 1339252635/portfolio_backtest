@@ -95,6 +95,12 @@ def get_market_overview():
     """获取市场概览"""
     try:
         data = realtime_service.get_market_overview()
+        if not data:
+            return jsonify({
+                'code': 503,
+                'error': '无法获取市场数据，请检查网络连接',
+                'data': {}
+            }), 503
         return jsonify({
             'code': 200,
             'data': data

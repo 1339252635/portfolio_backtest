@@ -167,9 +167,15 @@ const fetchMarketOverview = async () => {
     const res = await getMarketOverview()
     if (res.data.code === 200) {
       marketOverview.value = res.data.data
+    } else if (res.data.code === 503) {
+      ElMessage.warning('无法获取市场数据，请检查网络连接或切换到模拟模式')
+      marketOverview.value = {}
     }
   } catch (error) {
     console.error('Failed to fetch market overview:', error)
+    if (error.response?.status === 503) {
+      ElMessage.warning('无法获取市场数据，请检查网络连接或切换到模拟模式')
+    }
   }
 }
 
