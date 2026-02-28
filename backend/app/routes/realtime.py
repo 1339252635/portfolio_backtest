@@ -52,10 +52,10 @@ def get_batch_quotes():
 
 @realtime_bp.route('/products', methods=['GET'])
 def get_all_products_realtime():
-    """获取所有产品的实时行情"""
+    """获取所有产品的实时行情 - 限制数量避免超时"""
     try:
-        # 获取所有产品代码
-        products = Product.query.all()
+        # 获取所有产品代码，但限制数量
+        products = Product.query.limit(50).all()  # 最多50个产品
         codes = [p.code for p in products]
         
         if not codes:
@@ -64,10 +64,24 @@ def get_all_products_realtime():
                 'data': {}
             })
         
-        data = realtime_service.get_batch_realtime(codes)
+        # 使用缓存数据，如果没有缓存则返回空
+        data = {}
+        for code in codes:
+            cached = realtime_service.cache.get(code)
+            if cached:
+                data[code] = cached
+        
+        # 如果缓存数据不足，异步更新
+        if len(data) < len(codes) * 0.5:  # 如果缓存数据少于50%
+            import threading
+            def update_cache():
+                realtime_service.get_batch_realtime(codes)
+            threading.Thread(target=update_cache, daemon=True).start()
+        
         return jsonify({
             'code': 200,
-            'data': data
+            'data': data,
+            'message': f'Returning {len(data)} cached items, updating in background' if len(data) < len(codes) else 'All data from cache'
         })
     except Exception as e:
         return jsonify({

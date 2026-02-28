@@ -1,15 +1,25 @@
+import axios from 'axios'
 import api from './index'
 
 /**
  * Realtime Market Data API
  */
 
+// 创建专门的实时数据API实例，使用更长的超时时间
+const realtimeApi = axios.create({
+  baseURL: '/api',
+  timeout: 60000,  // 60秒超时
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
 /**
  * Get realtime quote for a single product
  * @param {string} code - Product code
  */
 export function getRealtimeQuote(code) {
-  return api.get(`/realtime/quote/${code}`)
+  return realtimeApi.get(`/realtime/quote/${code}`)
 }
 
 /**
@@ -17,21 +27,21 @@ export function getRealtimeQuote(code) {
  * @param {string[]} codes - Array of product codes
  */
 export function getBatchQuotes(codes) {
-  return api.post('/realtime/quotes', { codes })
+  return realtimeApi.post('/realtime/quotes', { codes })
 }
 
 /**
  * Get realtime data for all products
  */
 export function getAllProductsRealtime() {
-  return api.get('/realtime/products')
+  return realtimeApi.get('/realtime/products')
 }
 
 /**
  * Get market overview (major indices)
  */
 export function getMarketOverview() {
-  return api.get('/realtime/market-overview')
+  return realtimeApi.get('/realtime/market-overview')
 }
 
 /**

@@ -171,10 +171,19 @@ const fetchProductsRealtime = async () => {
     const res = await getAllProductsRealtime()
     if (res.data.code === 200) {
       productsRealtime.value = Object.values(res.data.data)
+      // 显示后台更新提示
+      if (res.data.message && res.data.message.includes('updating')) {
+        console.log(res.data.message)
+      }
     }
   } catch (error) {
     console.error('Failed to fetch products realtime:', error)
-    ElMessage.error('获取实时行情失败')
+    // 如果是超时错误，显示更友好的提示
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.warning('数据获取超时，请稍后重试')
+    } else {
+      ElMessage.error('获取实时行情失败')
+    }
   } finally {
     loading.value = false
   }

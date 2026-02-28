@@ -182,12 +182,32 @@ class RealtimeService:
             return None
     
     def get_batch_realtime(self, codes: List[str]) -> Dict[str, Dict]:
-        """批量获取实时行情"""
+        """批量获取实时行情 - 使用并发和超时控制"""
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError
+        
         result = {}
-        for code in codes:
-            data = self.get_realtime_quote(code)
-            if data:
-                result[code] = data
+        
+        def fetch_single(code):
+            try:
+                return code, self.get_realtime_quote(code)
+            except Exception as e:
+                print(f"Error fetching {code}: {e}")
+                return code, None
+        
+        # 使用线程池并发获取，设置超时
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(fetch_single, code): code for code in codes}
+            
+            for future in futures:
+                try:
+                    code, data = future.result(timeout=10)  # 单个请求10秒超时
+                    if data:
+                        result[code] = data
+                except TimeoutError:
+                    print(f"Timeout fetching {futures[future]}")
+                except Exception as e:
+                    print(f"Error in batch fetch: {e}")
+        
         return result
     
     def get_market_overview(self) -> Dict:
