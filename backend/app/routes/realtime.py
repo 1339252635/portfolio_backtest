@@ -121,3 +121,30 @@ def subscribe_realtime():
             'code': 500,
             'error': str(e)
         }), 500
+
+
+@realtime_bp.route('/mock-mode', methods=['POST'])
+def toggle_mock_mode():
+    """切换模拟数据模式"""
+    try:
+        enabled = request.json.get('enabled', False)
+        realtime_service.use_mock_data = enabled
+        return jsonify({
+            'code': 200,
+            'message': f'Mock mode {"enabled" if enabled else "disabled"}',
+            'mock_mode': enabled
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'error': str(e)
+        }), 500
+
+
+@realtime_bp.route('/mock-mode', methods=['GET'])
+def get_mock_mode():
+    """获取模拟数据模式状态"""
+    return jsonify({
+        'code': 200,
+        'mock_mode': realtime_service.use_mock_data
+    })

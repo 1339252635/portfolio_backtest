@@ -7,9 +7,17 @@
           <el-tag :type="isMarketOpen ? 'success' : 'info'" effect="dark">
             {{ isMarketOpen ? '交易中' : '已收盘' }}
           </el-tag>
+          <el-tag v-if="mockMode" type="warning" effect="dark">模拟数据</el-tag>
           <el-button type="primary" size="small" @click="refreshData" :loading="loading">
             <el-icon><Refresh /></el-icon>
             刷新
+          </el-button>
+          <el-button 
+            :type="mockMode ? 'warning' : 'default'" 
+            size="small" 
+            @click="toggleMockMode"
+          >
+            {{ mockMode ? '关闭模拟' : '模拟模式' }}
           </el-button>
         </div>
       </template>
@@ -123,7 +131,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
-import { getMarketOverview, getAllProductsRealtime } from '@/api/realtime'
+import { getMarketOverview, getAllProductsRealtime, toggleMockMode, getMockMode } from '@/api/realtime'
 
 const loading = ref(false)
 const autoRefresh = ref(true)
@@ -131,6 +139,7 @@ const refreshInterval = ref(10)
 const marketOverview = ref({})
 const productsRealtime = ref([])
 const isMarketOpen = ref(false)
+const mockMode = ref(false)
 let refreshTimer = null
 
 // 检查是否交易时间
@@ -277,7 +286,35 @@ const getChangeClass = (change) => {
   return 'neutral'
 }
 
+// 切换模拟模式
+const toggleMockMode = async () => {
+  try {
+    const res = await toggleMockMode(!mockMode.value)
+    if (res.data.code === 200) {
+      mockMode.value = !mockMode.value
+      ElMessage.success(mockMode.value ? '已切换到模拟数据模式' : '已切换到真实数据模式')
+      refreshData()
+    }
+  } catch (error) {
+    console.error('Failed to toggle mock mode:', error)
+    ElMessage.error('切换模式失败')
+  }
+}
+
+// 获取当前模式
+const fetchMockMode = async () => {
+  try {
+    const res = await getMockMode()
+    if (res.data.code === 200) {
+      mockMode.value = res.data.mock_mode
+    }
+  } catch (error) {
+    console.error('Failed to fetch mock mode:', error)
+  }
+}
+
 onMounted(() => {
+  fetchMockMode()
   refreshData()
   startAutoRefresh()
 })
