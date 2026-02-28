@@ -1,49 +1,35 @@
-import request from '@/utils/request'
+import api from './index'
 
 /**
- * 智能配置建议 API
+ * Smart Allocation API
  */
 
 /**
- * 获取风险评估问卷
+ * Get risk assessment questions
  */
 export function getRiskQuestions() {
-  return request({
-    url: '/smart-allocation/risk-questions',
-    method: 'get'
-  })
+  return api.get('/smart-allocation/risk-questions')
 }
 
 /**
- * 提交风险评估，获取配置建议
- * @param {Object} data - 风险评估数据
+ * Submit risk assessment and get allocation recommendation
+ * @param {Object} data - Risk assessment data
  */
 export function assessRisk(data) {
-  return request({
-    url: '/smart-allocation/assess',
-    method: 'post',
-    data
-  })
+  return api.post('/smart-allocation/assess', data)
 }
 
 /**
- * 获取所有配置模板
+ * Get all allocation templates
  */
 export function getAllocationTemplates() {
-  return request({
-    url: '/smart-allocation/templates',
-    method: 'get'
-  })
+  return api.get('/smart-allocation/templates')
 }
 
 /**
- * 根据市场情况调整配置
- * @param {Object} data - 调整参数
+ * Adjust allocation based on market condition
+ * @param {Object} data - Adjustment parameters
  */
 export function adjustByMarket(data) {
-  return request({
-    url: '/smart-allocation/adjust-by-market',
-    method: 'post',
-    data
-  })
+  return api.post('/smart-allocation/adjust-by-market', data)
 }
