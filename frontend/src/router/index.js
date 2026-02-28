@@ -5,6 +5,7 @@ import Backtest from '@/views/Backtest/index.vue'
 import BacktestConfig from '@/views/Backtest/Config.vue'
 import BacktestResult from '@/views/Backtest/Result.vue'
 import Analysis from '@/views/Analysis/index.vue'
+import SmartAllocation from '@/views/SmartAllocation/index.vue'
 
 const routes = [
   {
@@ -42,6 +43,12 @@ const routes = [
     name: 'Analysis',
     component: Analysis,
     meta: { title: '数据分析' }
+  },
+  {
+    path: '/smart-allocation',
+    name: 'SmartAllocation',
+    component: SmartAllocation,
+    meta: { title: '智能配置' }
   }
 ]
 

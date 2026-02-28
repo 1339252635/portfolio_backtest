@@ -12,11 +12,13 @@
 - **中证A50ETF** - 中证A50指数基金，A股核心资产
 
 ### 核心功能
-- 产品管理：添加/编辑/删除基金产品，同步历史数据
-- 回测引擎：支持资产配置、再平衡策略、定投策略
-- 风险分析：夏普比率、最大回撤、波动率、索提诺比率、卡玛比率
-- 可视化：净值曲线、回撤曲线、收益分布、蒙特卡洛模拟
-- 方案对比：多方案并行回测，风险收益对比
+- **产品管理**：添加/编辑/删除基金产品，同步历史数据
+- **智能配置**：基于风险承受能力自动生成资产配置建议
+- **回测引擎**：支持资产配置、再平衡策略、定投策略
+- **风险分析**：夏普比率、最大回撤、波动率、索提诺比率、卡玛比率
+- **可视化**：净值曲线、回撤曲线、收益分布、蒙特卡洛模拟
+- **方案对比**：多方案并行回测，风险收益对比
+- **一键启停**：PowerShell脚本快速启动和停止前后端服务
 
 ### 再平衡策略
 1. **不调整** - 买入持有
@@ -43,7 +45,48 @@
 
 ## 快速开始
 
-### 1. 安装后端依赖
+### 方式一：一键启动（推荐）
+
+系统提供 PowerShell 脚本，一键启动前后端服务：
+
+```powershell
+# 启动所有服务
+.\start-all.ps1
+
+# 或
+.\manage.ps1 start
+```
+
+启动成功后自动打开浏览器访问 http://localhost:3000
+
+**其他常用命令：**
+
+```powershell
+# 查看服务状态
+.\manage.ps1 status
+
+# 停止所有服务
+.\stop-all.ps1
+
+# 重启服务
+.\manage.ps1 restart
+
+# 强制停止（清理残留进程）
+.\stop-all.ps1 -Force
+```
+
+> **注意**：首次运行脚本可能需要设置 PowerShell 执行策略：
+> ```powershell
+> Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+> ```
+
+---
+
+### 方式二：手动启动
+
+如需手动控制服务，可以分别启动前后端。
+
+#### 1. 安装后端依赖
 
 ```bash
 cd backend
@@ -61,27 +104,22 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. 启动后端服务
+#### 2. 启动后端服务
 
 ```bash
-# 方式1：直接启动
 python run.py
-
-# 方式2：使用启动脚本
-cd ..
-python start_backend.py
 ```
 
 后端服务将在 http://localhost:5000 启动
 
-### 3. 安装前端依赖
+#### 3. 安装前端依赖
 
 ```bash
 cd frontend
 npm install
 ```
 
-### 4. 启动前端开发服务器
+#### 4. 启动前端开发服务器
 
 ```bash
 npm run dev
@@ -117,6 +155,12 @@ npm run dev
 - `POST /api/analysis/monte-carlo` - 蒙特卡洛模拟
 - `POST /api/analysis/correlation` - 相关性分析
 
+### 智能配置
+- `POST /api/smart-allocation/assess` - 风险评估与配置建议
+- `GET /api/smart-allocation/templates` - 获取配置模板
+- `POST /api/smart-allocation/adjust-by-market` - 根据市场环境调整配置
+- `GET /api/smart-allocation/risk-questions` - 获取风险评估问卷
+
 ## 项目结构
 
 ```
@@ -127,11 +171,13 @@ portfolio_backtest/
 │   │   ├── routes/            # API路由
 │   │   │   ├── products.py
 │   │   │   ├── backtest.py
-│   │   │   └── analysis.py
+│   │   │   ├── analysis.py
+│   │   │   └── smart_allocation.py  # 智能配置API
 │   │   ├── services/          # 业务逻辑
 │   │   │   ├── data_service.py
 │   │   │   ├── backtest_engine.py
-│   │   │   └── risk_analyzer.py
+│   │   │   ├── risk_analyzer.py
+│   │   │   └── smart_allocation.py  # 智能配置服务
 │   │   └── utils/
 │   ├── config.py
 │   ├── requirements.txt
@@ -140,10 +186,12 @@ portfolio_backtest/
 ├── frontend/                   # 前端代码
 │   ├── src/
 │   │   ├── api/               # API接口
+│   │   │   └── smartAllocation.js   # 智能配置API
 │   │   ├── stores/            # Pinia状态管理
 │   │   ├── views/             # 页面组件
 │   │   │   ├── Dashboard/
 │   │   │   ├── Products/
+│   │   │   ├── SmartAllocation/     # 智能配置页面
 │   │   │   ├── Backtest/
 │   │   │   └── Analysis/
 │   │   ├── App.vue
@@ -151,9 +199,15 @@ portfolio_backtest/
 │   ├── package.json
 │   └── vite.config.js
 │
+├── docs/                       # 文档目录
+│   └── 操作手册.md
+│
 ├── data/                       # 数据库文件
 │   └── portfolio.db
 │
+├── start-all.ps1              # 一键启动脚本
+├── stop-all.ps1               # 一键停止脚本
+├── manage.ps1                 # 统一管理脚本
 └── README.md
 ```
 
@@ -200,16 +254,19 @@ portfolio_backtest/
 - [x] Phase 2: 数据层开发
 - [x] Phase 3: 回测引擎开发
 - [x] Phase 4: 分析模块开发
-- [ ] Phase 5: 前端可视化（部分完成）
-- [ ] Phase 6: 测试与优化
+- [x] Phase 5: 智能配置建议
+- [x] Phase 6: 一键启停脚本
+- [ ] Phase 7: 前端可视化优化
+- [ ] Phase 8: 测试与优化
 
 ## 后续扩展
 
-1. **智能配置建议**: 基于风险承受能力的配置推荐
-2. **实时数据接入**: 接入实时行情数据
-3. **预警系统**: 配置偏离预警、市场波动预警
-4. **多因子模型**: 加入更多因子进行收益分析
-5. **机器学习**: 预测模型、智能调仓
+1. ~~**智能配置建议**: 基于风险承受能力的配置推荐~~ ✅ 已完成
+2. ~~**一键启停脚本**: PowerShell 脚本管理服务~~ ✅ 已完成
+3. **实时数据接入**: 接入实时行情数据
+4. **预警系统**: 配置偏离预警、市场波动预警
+5. **多因子模型**: 加入更多因子进行收益分析
+6. **机器学习**: 预测模型、智能调仓
 
 ## 许可证
 

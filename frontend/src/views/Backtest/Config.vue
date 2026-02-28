@@ -112,15 +112,36 @@
           </el-row>
         </div>
 
-        <!-- 资产配置 -->
+        <!-- 智能配置推荐 -->
+        <div class="form-section" v-if="smartConfig">
+          <div class="smart-config-banner">
+            <div class="banner-icon">
+              <el-icon><MagicStick /></el-icon>
+            </div>
+            <div class="banner-content">
+              <h4>已应用智能配置建议</h4>
+              <p>风险等级: {{ smartConfig.riskLevelText }} | 风险评分: {{ smartConfig.riskScore }}分</p>
+            </div>
+            <button class="banner-action" @click="clearSmartConfig">
+              <el-icon><Close /></el-icon>
+            </button>
+          </div>
+        </div>
+
         <div class="form-section">
-          <h3 class="section-title">
-            <span class="section-icon"><el-icon><PieChart /></el-icon></span>
-            资产配置
-            <span class="total-badge" :class="{ 'error': totalRatio !== 100 }">
-              总计 {{ totalRatio }}%
-            </span>
-          </h3>
+          <div class="section-header-row">
+            <h3 class="section-title">
+              <span class="section-icon"><el-icon><PieChart /></el-icon></span>
+              资产配置
+              <span class="total-badge" :class="{ 'error': totalRatio !== 100 }">
+                总计 {{ totalRatio }}%
+              </span>
+            </h3>
+            <button class="smart-allocation-btn" @click="goToSmartAllocation">
+              <el-icon><MagicStick /></el-icon>
+              <span>智能配置建议</span>
+            </button>
+          </div>
 
           <div class="allocation-list">
             <div
@@ -171,6 +192,9 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useBacktestStore } from '@/stores/backtest'
 import { useProductsStore } from '@/stores/products'
+import {
+  ArrowLeft, Document, Money, Refresh, PieChart, Delete, Plus, Loading, MagicStick, Close
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const backtestStore = useBacktestStore()
@@ -179,6 +203,16 @@ const productsStore = useProductsStore()
 const formRef = ref(null)
 const submitting = ref(false)
 const productList = ref([])
+const smartConfig = ref(null)
+
+// 产品代码映射（智能配置产品名称 -> 实际产品代码）
+const productCodeMap = {
+  '混债基金': 'HUNZHAI',
+  '红利低波': 'HONGLLB',
+  '中证A50': 'A50ETF',
+  '标普ETF': 'SPY',
+  '纳指ETF': 'QQQ'
+}
 
 const form = ref({
   name: '',
@@ -249,9 +283,64 @@ const cancel = () => {
   router.back()
 }
 
+const goToSmartAllocation = () => {
+  router.push('/smart-allocation')
+}
+
+const clearSmartConfig = () => {
+  smartConfig.value = null
+  localStorage.removeItem('smartAllocationConfig')
+}
+
+// 加载智能配置
+const loadSmartConfig = () => {
+  const saved = localStorage.getItem('smartAllocationConfig')
+  if (saved) {
+    try {
+      const config = JSON.parse(saved)
+      const riskLevelMap = {
+        conservative: '保守型',
+        cautious: '谨慎型',
+        balanced: '平衡型',
+        aggressive: '进取型',
+        radical: '激进型'
+      }
+
+      smartConfig.value = {
+        ...config,
+        riskLevelText: riskLevelMap[config.riskLevel] || config.riskLevel
+      }
+
+      // 将智能配置应用到表单
+      if (config.allocation) {
+        const newAllocations = Object.entries(config.allocation)
+          .filter(([_, ratio]) => ratio > 0)
+          .map(([name, ratio]) => ({
+            product_code: productCodeMap[name] || '',
+            allocation_ratio: ratio
+          }))
+          .filter(item => item.product_code)
+
+        if (newAllocations.length > 0) {
+          form.value.allocations = newAllocations
+        }
+      }
+
+      // 清除已使用的配置
+      localStorage.removeItem('smartAllocationConfig')
+
+      ElMessage.success('已应用智能配置建议')
+    } catch (e) {
+      console.error('加载智能配置失败:', e)
+    }
+  }
+}
+
 onMounted(async () => {
   try {
     productList.value = await productsStore.fetchProducts()
+    // 加载智能配置
+    loadSmartConfig()
   } catch (error) {
     ElMessage.error('获取产品列表失败')
   }
@@ -332,6 +421,21 @@ onMounted(async () => {
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.section-header-row .section-title {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
 .section-icon {
   width: 32px;
   height: 32px;
@@ -341,6 +445,87 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   color: white;
+}
+
+/* 智能配置按钮 */
+.smart-allocation-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #AF52DE 0%, #5856D6 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(88, 86, 214, 0.3);
+}
+
+.smart-allocation-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(88, 86, 214, 0.4);
+}
+
+/* 智能配置横幅 */
+.smart-config-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(175, 82, 222, 0.1) 0%, rgba(88, 86, 214, 0.1) 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(175, 82, 222, 0.2);
+}
+
+.banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #AF52DE 0%, #5856D6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 22px;
+}
+
+.banner-content {
+  flex: 1;
+}
+
+.banner-content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 4px 0;
+}
+
+.banner-content p {
+  font-size: 13px;
+  color: #86868b;
+  margin: 0;
+}
+
+.banner-action {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #86868b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-action:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
 }
 
 .total-badge {
