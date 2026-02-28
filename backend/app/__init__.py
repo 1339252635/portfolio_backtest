@@ -22,11 +22,13 @@ def create_app(config_class=Config):
     from app.routes.backtest import bp as backtest_bp
     from app.routes.analysis import bp as analysis_bp
     from app.routes.smart_allocation import bp as smart_allocation_bp
+    from app.routes.realtime import realtime_bp
     
     app.register_blueprint(products_bp, url_prefix='/api/products')
     app.register_blueprint(backtest_bp, url_prefix='/api/backtest')
     app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
     app.register_blueprint(smart_allocation_bp, url_prefix='/api/smart-allocation')
+    app.register_blueprint(realtime_bp)
     
     # 创建数据库表
     with app.app_context():

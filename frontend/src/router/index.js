@@ -6,6 +6,7 @@ import BacktestConfig from '@/views/Backtest/Config.vue'
 import BacktestResult from '@/views/Backtest/Result.vue'
 import Analysis from '@/views/Analysis/index.vue'
 import SmartAllocation from '@/views/SmartAllocation/index.vue'
+import RealtimeMarket from '@/views/RealtimeMarket/index.vue'
 
 const routes = [
   {
@@ -49,6 +50,12 @@ const routes = [
     name: 'SmartAllocation',
     component: SmartAllocation,
     meta: { title: '智能配置' }
+  },
+  {
+    path: '/realtime',
+    name: 'RealtimeMarket',
+    component: RealtimeMarket,
+    meta: { title: '实时行情' }
   }
 ]
 

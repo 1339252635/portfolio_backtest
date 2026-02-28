@@ -20,6 +20,10 @@
           <el-icon><Collection /></el-icon>
           <span>产品管理</span>
         </el-menu-item>
+        <el-menu-item index="/realtime">
+          <el-icon><Timer /></el-icon>
+          <span>实时行情</span>
+        </el-menu-item>
         <el-menu-item index="/smart-allocation">
           <el-icon><MagicStick /></el-icon>
           <span>智能配置</span>
@@ -70,7 +74,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { HomeFilled, Collection, DataAnalysis, TrendCharts, User, Refresh, MagicStick } from '@element-plus/icons-vue'
+import { HomeFilled, Collection, DataAnalysis, TrendCharts, User, Refresh, MagicStick, Timer } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
