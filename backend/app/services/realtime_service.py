@@ -101,8 +101,8 @@ class RealtimeService:
     def _get_etf_realtime(self, code: str) -> Optional[Dict]:
         """获取ETF实时行情"""
         try:
-            # 使用AKShare获取ETF实时行情
-            df = ak.fund_etf_spot_em()
+            # 使用AKShare获取ETF实时行情 - 使用stock_zh_a_spot_em获取A股实时行情
+            df = ak.stock_zh_a_spot_em()
             etf_data = df[df['代码'] == code]
             
             if etf_data.empty:
@@ -115,9 +115,9 @@ class RealtimeService:
                 'price': float(row.get('最新价', 0)),
                 'change': float(row.get('涨跌幅', 0)),
                 'change_amount': float(row.get('涨跌额', 0)),
-                'open': float(row.get('开盘价', 0)),
-                'high': float(row.get('最高价', 0)),
-                'low': float(row.get('最低价', 0)),
+                'open': float(row.get('今开', 0)),
+                'high': float(row.get('最高', 0)),
+                'low': float(row.get('最低', 0)),
                 'volume': int(row.get('成交量', 0)),
                 'amount': float(row.get('成交额', 0)),
                 'pre_close': float(row.get('昨收', 0)),
@@ -193,33 +193,36 @@ class RealtimeService:
     def get_market_overview(self) -> Dict:
         """获取市场概览"""
         try:
-            # 获取主要指数
+            # 获取主要指数 - 使用stock_zh_index_spot_em获取指数行情
             indices = {
-                'sh000001': '上证指数',
-                'sz399001': '深证成指',
-                'sh000300': '沪深300',
-                'sh000016': '上证50',
-                'sz399006': '创业板指',
-                'sh000688': '科创50'
+                '000001': '上证指数',
+                '399001': '深证成指',
+                '000300': '沪深300',
+                '000016': '上证50',
+                '399006': '创业板指',
+                '000688': '科创50'
             }
             
             result = {}
-            for code, name in indices.items():
-                try:
-                    df = ak.index_zh_a_spot_em()
-                    index_data = df[df['代码'] == code.replace('sh', '').replace('sz', '')]
-                    if not index_data.empty:
-                        row = index_data.iloc[0]
-                        result[code] = {
-                            'name': name,
-                            'price': float(row.get('最新价', 0)),
-                            'change': float(row.get('涨跌幅', 0)),
-                            'change_amount': float(row.get('涨跌额', 0)),
-                            'volume': int(row.get('成交量', 0)),
-                            'amount': float(row.get('成交额', 0))
-                        }
-                except Exception as e:
-                    print(f"Error getting index {code}: {e}")
+            try:
+                df = ak.stock_zh_index_spot_em()
+                for code, name in indices.items():
+                    try:
+                        index_data = df[df['代码'] == code]
+                        if not index_data.empty:
+                            row = index_data.iloc[0]
+                            result[code] = {
+                                'name': name,
+                                'price': float(row.get('最新价', 0)),
+                                'change': float(row.get('涨跌幅', 0)),
+                                'change_amount': float(row.get('涨跌额', 0)),
+                                'volume': int(row.get('成交量', 0)),
+                                'amount': float(row.get('成交额', 0))
+                            }
+                    except Exception as e:
+                        print(f"Error getting index {code}: {e}")
+            except Exception as e:
+                print(f"Error getting market overview data: {e}")
             
             return result
         except Exception as e:
