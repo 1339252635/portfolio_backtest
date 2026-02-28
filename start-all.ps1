@@ -123,7 +123,37 @@ function Start-FrontendService {
     Stop-ExistingProcess -PidFile $FrontendPidFile -ServiceName "Frontend"
     
     try {
-        $frontendProcess = Start-Process -FilePath "npm" -ArgumentList "run", "dev" -WorkingDirectory $FrontendPath -PassThru -WindowStyle Minimized
+        # Try to find npm
+        $npmPaths = @(
+            "C:\Program Files\nodejs\npm.cmd",
+            "C:\Program Files (x86)\nodejs\npm.cmd",
+            (Join-Path $env:ProgramFiles "nodejs\npm.cmd"),
+            (Join-Path ${env:ProgramFiles(x86)} "nodejs\npm.cmd")
+        )
+        
+        $npmCmd = $null
+        foreach ($path in $npmPaths) {
+            if (Test-Path $path) {
+                $npmCmd = $path
+                break
+            }
+        }
+        
+        if (-not $npmCmd) {
+            $npmCmd = (Get-Command "npm" -ErrorAction SilentlyContinue)?.Source
+            if (-not $npmCmd) {
+                $npmCmd = (Get-Command "npm.cmd" -ErrorAction SilentlyContinue)?.Source
+            }
+        }
+        
+        if (-not $npmCmd) {
+            Write-Host "[Frontend] Error: npm not found. Please install Node.js" -ForegroundColor $ColorError
+            Write-Host "[Frontend] Searched paths: $($npmPaths -join ', ')" -ForegroundColor $ColorWarning
+            return $false
+        }
+        
+        Write-Host "[Frontend] Using npm: $npmCmd" -ForegroundColor $ColorInfo
+        $frontendProcess = Start-Process -FilePath $npmCmd -ArgumentList "run", "dev" -WorkingDirectory $FrontendPath -PassThru -WindowStyle Minimized
         
         if ($frontendProcess) {
             $frontendProcess.Id | Out-File $FrontendPidFile
