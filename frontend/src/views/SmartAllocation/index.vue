@@ -313,7 +313,7 @@ import {
   ArrowRight,
   Wallet,
   Money,
-  TrendArrowUp,
+  Top,
   Trophy
 } from '@element-plus/icons-vue'
 import { assessRisk, adjustByMarket, getAllocationTemplates } from '@/api/smartAllocation'
@@ -382,13 +382,13 @@ const lossOptions = [
 const goalOptions = [
   { label: '资产保值', value: 'capital_preservation', icon: 'Wallet' },
   { label: '稳定收益', value: 'steady_income', icon: 'Money' },
-  { label: '平衡增长', value: 'balanced_growth', icon: 'TrendArrowUp' },
+  { label: '平衡增长', value: 'balanced_growth', icon: 'Top' },
   { label: '资本增值', value: 'capital_growth', icon: 'Trophy' },
   { label: '激进增长', value: 'aggressive_growth', icon: 'TrendCharts' }
 ]
 
 const marketConditions = [
-  { label: '牛市', value: 'bull', icon: 'TrendArrowUp', desc: '市场上涨，可适当增加权益仓位' },
+  { label: '牛市', value: 'bull', icon: 'Top', desc: '市场上涨，可适当增加权益仓位' },
   { label: '熊市', value: 'bear', icon: 'TrendCharts', desc: '市场下跌，建议降低风险敞口' },
   { label: '震荡市', value: 'sideways', icon: 'RefreshLeft', desc: '市场震荡，保持均衡配置' }
 ]
