@@ -11,8 +11,9 @@ class RiskAnalyzer:
         results: List[BacktestResult] 回测结果列表
         """
         self.results = results
-        self.returns = np.array([r.daily_return for r in results if r.daily_return is not None])
-        self.values = np.array([r.total_value for r in results])
+        # 将Decimal转换为float
+        self.returns = np.array([float(r.daily_return) for r in results if r.daily_return is not None])
+        self.values = np.array([float(r.total_value) for r in results])
         self.dates = [r.date for r in results]
     
     def calculate_all_metrics(self):
