@@ -496,18 +496,51 @@ const submitAssessment = async () => {
       investment_goal: assessment.investment_goal
     })
     
-    if (res.code === 200) {
-      result.value = res.data
+    if (res.success) {
+      // 转换后端数据格式为前端期望的格式
+      result.value = {
+        risk_level: res.data.risk_level,
+        risk_score: calculateRiskScore(res.data.risk_level),
+        suggested_equity_ratio: calculateEquityRatio(res.data.risk_level),
+        allocation: res.data.allocations
+      }
       showResult.value = true
       nextTick(() => {
         initPieChart()
       })
+    } else {
+      ElMessage.error(res.error || '评估失败')
     }
   } catch (error) {
+    console.error('评估错误:', error)
     ElMessage.error('评估失败，请重试')
   } finally {
     loading.value = false
   }
+}
+
+// 根据风险等级计算风险评分
+const calculateRiskScore = (riskLevel) => {
+  const scores = {
+    'conservative': 20,
+    'cautious': 40,
+    'balanced': 60,
+    'aggressive': 80,
+    'radical': 100
+  }
+  return scores[riskLevel] || 60
+}
+
+// 根据风险等级计算建议权益仓位
+const calculateEquityRatio = (riskLevel) => {
+  const ratios = {
+    'conservative': 20,
+    'cautious': 35,
+    'balanced': 55,
+    'aggressive': 75,
+    'radical': 100
+  }
+  return ratios[riskLevel] || 55
 }
 
 // 初始化饼图
@@ -555,14 +588,32 @@ const selectMarket = async (market) => {
   selectedMarket.value = market
   try {
     const res = await adjustByMarket({
-      risk_level: result.value.risk_level,
+      allocations: result.value.allocation,
       market_condition: market
     })
     
-    if (res.code === 200) {
-      marketAdjustment.value = res.data
+    if (res.success) {
+      // 转换调整数据格式
+      const adjustments = {}
+      const original = res.data.original_allocations
+      const adjusted = res.data.adjusted_allocations
+      
+      for (const [name, originalValue] of Object.entries(original)) {
+        adjustments[name] = {
+          original: originalValue,
+          adjusted: adjusted[name] || originalValue
+        }
+      }
+      
+      marketAdjustment.value = {
+        adjustments: adjustments,
+        reason: res.data.adjustment_reason
+      }
+    } else {
+      ElMessage.error(res.error || '获取调整建议失败')
     }
   } catch (error) {
+    console.error('市场环境调整错误:', error)
     ElMessage.error('获取调整建议失败')
   }
 }

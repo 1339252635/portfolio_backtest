@@ -1,6 +1,7 @@
 import akshare as ak
 import yfinance as yf
 import pandas as pd
+import requests
 from datetime import datetime, timedelta
 from app import db
 from app.models import Product, PriceData
@@ -24,7 +25,9 @@ class DataService:
             start_date = end_date - timedelta(days=365*5)
         
         # 根据产品类型选择数据源
-        if product.type == 'ETF':
+        if product.type == 'US_STOCK':
+            df = DataService._fetch_us_stock_data(code, start_date, end_date)
+        elif product.type == 'ETF':
             df = DataService._fetch_etf_data(code, start_date, end_date)
         else:
             df = DataService._fetch_fund_data(code, start_date, end_date)
@@ -68,10 +71,27 @@ class DataService:
         return records_created
     
     @staticmethod
+    def _code_to_sina_format(code):
+        """转换代码为新浪格式"""
+        if code.startswith('5'):
+            return f"sh{code}"
+        elif code.startswith('1'):
+            return f"sz{code}"
+        elif code.startswith('000') or code.startswith('999'):
+            return f"sh{code}"
+        elif code.startswith('399'):
+            return f"sz{code}"
+        return f"sh{code}"
+    
+    @staticmethod
     def _fetch_etf_data(code, start_date, end_date):
-        """获取ETF数据"""
+        """获取ETF数据 - 支持多数据源"""
+        # 判断是否为美股代码
+        if code in ['SPY', 'QQQ'] or (len(code) <= 4 and code.isalpha()):
+            return DataService._fetch_us_stock_data(code, start_date, end_date)
+        
+        # 首先尝试AKShare
         try:
-            # 使用AKShare获取ETF数据
             df = ak.fund_etf_hist_em(symbol=code, period="daily", 
                                      start_date=start_date.strftime("%Y%m%d"),
                                      end_date=end_date.strftime("%Y%m%d"),
@@ -94,8 +114,126 @@ class DataService:
             return df[['date', 'open', 'close', 'high', 'low', 'volume', 'nav']]
             
         except Exception as e:
-            print(f"Error fetching ETF data for {code}: {e}")
+            print(f"AKShare failed for {code}: {e}, trying Sina...")
+        
+        # AKShare失败，尝试新浪财经
+        try:
+            return DataService._fetch_etf_data_from_sina(code, start_date, end_date)
+        except Exception as e:
+            print(f"Sina also failed for {code}: {e}")
             return None
+    
+    @staticmethod
+    def _fetch_us_stock_data(code, start_date, end_date):
+        """获取美股数据 - 使用Stooq数据源"""
+        try:
+            print(f"Fetching US stock data for {code} from Stooq...")
+            
+            # Stooq免费数据源
+            url = f"https://stooq.com/q/d/l/?s={code.lower()}.us&i=d"
+            df = pd.read_csv(url)
+            
+            if df.empty:
+                raise ValueError(f"No data returned from Stooq for {code}")
+            
+            # 重命名列
+            df = df.rename(columns={
+                'Date': 'date',
+                'Open': 'open',
+                'Close': 'close',
+                'High': 'high',
+                'Low': 'low',
+                'Volume': 'volume'
+            })
+            
+            # 转换日期格式
+            df['date'] = pd.to_datetime(df['date']).dt.date
+            
+            # 过滤日期范围
+            df = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
+            
+            # 添加nav列
+            df['nav'] = df['close']
+            
+            print(f"Got {len(df)} records for {code} from Stooq")
+            return df[['date', 'open', 'close', 'high', 'low', 'volume', 'nav']]
+            
+        except Exception as e:
+            print(f"Stooq failed for {code}: {e}")
+            return None
+    
+    @staticmethod
+    def _fetch_etf_data_from_sina(code, start_date, end_date):
+        """从新浪财经获取ETF历史数据 - 使用AKShare的stock_zh_index_daily"""
+        sina_code = DataService._code_to_sina_format(code)
+        
+        # 使用AKShare的stock_zh_index_daily接口（这个接口可以工作）
+        df = ak.stock_zh_index_daily(symbol=sina_code)
+        
+        if df.empty:
+            raise ValueError("No data returned from Sina")
+        
+        # 列名已经是英文，只需要过滤日期范围
+        df['date'] = pd.to_datetime(df['date']).dt.date
+        df = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
+        
+        # 添加nav列（ETF使用收盘价）
+        df['nav'] = df['close']
+        
+        return df[['date', 'open', 'close', 'high', 'low', 'volume', 'nav']]
+    
+    @staticmethod
+    def _fetch_etf_data_from_sina_http(code, start_date, end_date):
+        """从新浪财经获取ETF历史数据 - HTTP方式（备用）"""
+        sina_code = DataService._code_to_sina_format(code)
+        
+        # 新浪财经历史数据API
+        url = f"https://quotes.sina.cn/cn/api/quotes.php?symbol={sina_code}&scale=240&ma=5&datalen=1000"
+        
+        headers = {
+            'Referer': 'https://finance.sina.com.cn',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            raise ValueError(f"Failed to fetch data from Sina: {response.status_code}")
+        
+        # 解析JSONP格式数据
+        text = response.text
+        # 提取JSON部分
+        start = text.find('(') + 1
+        end = text.rfind(')')
+        if start <= 0 or end <= start:
+            raise ValueError("Invalid response format from Sina")
+        
+        json_str = text[start:end]
+        data = pd.read_json(json_str)
+        
+        if data.empty:
+            raise ValueError("No data returned from Sina")
+        
+        # 重命名列
+        df = data.rename(columns={
+            'day': 'date',
+            'open': 'open',
+            'high': 'high',
+            'low': 'low',
+            'close': 'close',
+            'volume': 'volume'
+        })
+        
+        # 转换日期格式
+        df['date'] = pd.to_datetime(df['date']).dt.date
+        
+        # 过滤日期范围
+        df = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
+        
+        # 添加nav列（ETF使用收盘价）
+        df['nav'] = df['close']
+        
+        return df[['date', 'open', 'close', 'high', 'low', 'volume', 'nav']]
     
     @staticmethod
     def _fetch_fund_data(code, start_date, end_date):

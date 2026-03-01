@@ -1,10 +1,35 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import BacktestScenario, ScenarioAllocation, BacktestResult, Holding
+from app.models import BacktestScenario, ScenarioAllocation, BacktestResult, Holding, Product
 from app.services.backtest_engine import BacktestEngine
+from app.services.data_service import DataService
 from datetime import datetime
 
 bp = Blueprint('backtest', __name__)
+
+# 产品名称到代码的映射
+PRODUCT_NAME_TO_CODE = {
+    'A50ETF': '560050',
+    'SPY': 'SPY',
+    'HONGLLB': '515080',  # 红利低波ETF
+    'QQQ': 'QQQ',
+    '纳指ETF': '513100',
+    '标普ETF': '513500',
+    '中证A50': '560050',
+    '红利低波': '515080',
+    '混债基金': '000171'
+}
+
+# 产品代码到信息的映射
+PRODUCT_INFO = {
+    '560050': {'name': 'A50ETF', 'type': 'ETF', 'category': '中证A50'},
+    '513100': {'name': '纳指ETF', 'type': 'ETF', 'category': '纳斯达克100'},
+    '513500': {'name': '标普500ETF', 'type': 'ETF', 'category': '标普500'},
+    '515080': {'name': '红利低波ETF', 'type': 'ETF', 'category': '红利低波'},
+    '000171': {'name': '易方达丰润债券', 'type': 'FUND', 'category': '债券基金'},
+    'SPY': {'name': 'SPDR S&P 500', 'type': 'US_STOCK', 'category': '美股ETF'},
+    'QQQ': {'name': 'Invesco QQQ', 'type': 'US_STOCK', 'category': '美股ETF'}
+}
 
 
 @bp.route('', methods=['GET'])
@@ -37,12 +62,62 @@ def create_scenario():
     """创建回测方案并执行回测"""
     data = request.get_json()
     
+    # 先同步所有需要的价格数据
+    allocations = data.get('allocations', [])
+    start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+    end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+    
+    sync_errors = []
+    for alloc in allocations:
+        original_code = alloc['product_code']
+        
+        # 将产品名称转换为代码
+        code = PRODUCT_NAME_TO_CODE.get(original_code, original_code)
+        
+        # 检查产品是否存在，不存在则创建
+        product = Product.query.filter_by(code=code).first()
+        if not product:
+            print(f"Creating product {code}...")
+            info = PRODUCT_INFO.get(code, {'name': original_code, 'type': 'ETF', 'category': ''})
+            product = Product(
+                code=code,
+                name=info['name'],
+                type=info['type'],
+                category=info['category'],
+                fee_rate=0.005,  # 默认费率0.5%
+                purchase_fee=0.001,
+                redemption_fee=0.005
+            )
+            db.session.add(product)
+            db.session.flush()
+        
+        # 更新allocation中的code为实际代码
+        alloc['product_code'] = code
+        
+        try:
+            # 检查是否已有数据
+            from app.models import PriceData
+            existing_data = PriceData.query.filter(
+                PriceData.product_code == code,
+                PriceData.date >= start_date,
+                PriceData.date <= end_date
+            ).count()
+            
+            # 如果数据不足，尝试同步
+            if existing_data < 10:  # 假设至少需要10天的数据
+                print(f"Syncing price data for {code}...")
+                DataService.sync_product_data(code, start_date, end_date)
+                
+        except Exception as e:
+            print(f"Error syncing data for {code}: {e}")
+            sync_errors.append(f"{code}: {str(e)}")
+    
     # 创建方案
     scenario = BacktestScenario(
         name=data['name'],
         description=data.get('description'),
-        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date(),
-        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').date(),
+        start_date=start_date,
+        end_date=end_date,
         initial_amount=data.get('initial_amount', 100000),
         rebalance_strategy=data.get('rebalance_strategy', 'none'),
         rebalance_period=data.get('rebalance_period'),
@@ -57,7 +132,7 @@ def create_scenario():
     db.session.flush()  # 获取scenario.id
     
     # 添加资产配置
-    for alloc in data.get('allocations', []):
+    for alloc in allocations:
         allocation = ScenarioAllocation(
             scenario_id=scenario.id,
             product_code=alloc['product_code'],
@@ -73,11 +148,15 @@ def create_scenario():
         engine.run()
         return jsonify({
             'scenario': scenario.to_dict(),
-            'message': 'Backtest completed successfully'
+            'message': 'Backtest completed successfully',
+            'sync_warnings': sync_errors if sync_errors else None
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        if sync_errors:
+            error_msg += f" (Data sync errors: {'; '.join(sync_errors)})"
+        return jsonify({'error': error_msg}), 500
 
 
 @bp.route('/<int:id>', methods=['DELETE'])
